@@ -1,0 +1,11 @@
+groups:
+- name: gin_alerts
+  rules:
+  - alert: HighErrorRate
+    expr: sum(rate(api_errors_total[5m])) > 5
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "API error rate is high"
+      description: "More than 5 errors in last 5 minutes."

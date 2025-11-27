@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hono-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hono-api
+  template:
+    metadata:
+      labels:
+        app: hono-api
+    spec:
+      containers:
+      - name: hono
+        image: your-registry/hono-api:latest
+        ports:
+        - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hono-api-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 3000
+  selector:
+    app: hono-api

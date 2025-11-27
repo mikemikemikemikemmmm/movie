@@ -1,0 +1,31 @@
+
+root = "."  # 監聽的根目錄
+tmp_dir = "tmp" # 存放編譯後檔案的臨時目錄
+
+[build]
+cmd = "go build -o tmp/main.exe ./cmd/main.go"
+include_ext = ["go", "tpl", "tmpl", "html", "css", "js"] # 包含這些副檔名才會觸發重新編譯
+exclude_dir = ["assets", "tmp", "vendor", "testdata"] # 排除這些目錄的變動
+delay = 1000 # 延遲 1000ms (1秒) 後再編譯，避免編譯一半
+stop_on_error = true # 編譯失敗時停止
+
+[run]
+# 執行編譯後的檔案
+# {{.TempDir}} 會被替換為 tmp_dir (即 tmp)
+cmd = "./tmp/main.exe"
+
+[log]
+# 程式輸出日誌的設定
+time = false # 是否顯示日誌時間
+main_only = false # 只顯示主程式的輸出
+
+[color]
+# 日誌顏色設定
+main = "magenta"
+watcher = "cyan"
+build = "yellow"
+runner = "green"
+
+[misc]
+# 其他設定
+clean_on_exit = true # 退出 air 時清除臨時檔案
