@@ -28,7 +28,7 @@ func handleReserve(c *gin.Context) {
 		})
 		return
 	}
-	if err := kafka.WriteReserveMessages(c, &reserveData); err != nil {
+	if err := kafka.SendReserveMessage(c, &reserveData); err != nil {
 		redis.ReleaseLockSeats(&reserveData)
 		c.JSON(400, gin.H{
 			"error": err.Error(),
@@ -91,4 +91,30 @@ func handleCheckReserve(c *gin.Context) {
 	default:
 		c.JSON(400, gin.H{"data": "訂位失敗"})
 	}
+}
+func handleCheckHealth(c *gin.Context) {
+	c.JSON(200, gin.H{"data": "health"})
+}
+
+func handleCheckReady(c *gin.Context) {
+	// 檢查 SQL 連線
+	if err := sql.CheckSqlReady(); err != nil {
+		c.JSON(500, gin.H{"error": "sql not ready", "detail": err.Error()})
+		return
+	}
+
+	// 檢查 Redis
+	if err := redis.RedisClient.Ping(c).Err(); err != nil {
+		c.JSON(500, gin.H{"error": "redis not ready", "detail": err.Error()})
+		return
+	}
+
+	// 檢查 Kafka
+	if err := kafka.CheckKafkaReady(); err != nil {
+		c.JSON(500, gin.H{"error": "kafka not ready", "detail": err.Error()})
+		return
+	}
+
+	// 若全部健康
+	c.JSON(200, gin.H{"data": "ready"})
 }

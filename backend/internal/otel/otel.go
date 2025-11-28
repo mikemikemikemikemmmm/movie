@@ -1,0 +1,5 @@
+package otel
+
+func createTraceparent() {
+
+}

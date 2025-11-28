@@ -21,7 +21,13 @@ func InitSQL() error {
 	SqlDB = db
 	return nil
 }
-
+func CheckSqlReady() error {
+	sqlDB, err := SqlDB.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Ping()
+}
 func ReserveSeats(reserveData *structs.ReservePostData) error {
 	if len(reserveData.SeatIds) == 0 {
 		return fmt.Errorf("seatIDs is empty")

@@ -23,5 +23,7 @@ func InitRouter() {
 	RootRouter.GET("/refresh_seats", handleRefreshSeats)
 	RootRouter.POST("/check_reserve", handleCheckReserve)
 	RootRouter.POST("/reserve", handleReserve)
+	RootRouter.POST("/health", handleCheckHealth)
+	RootRouter.POST("/ready", handleCheckReady)
 	RootRouter.Run("0.0.0.0:" + config.GetConfig().Port)
 }
