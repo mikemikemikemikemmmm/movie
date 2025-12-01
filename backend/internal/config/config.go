@@ -13,6 +13,7 @@ type ConfigStruct struct {
 	SqlUrl         string
 	FrontendOrigin string
 	ReserveTopic   string
+	TempoURL       string
 }
 
 var (
@@ -29,6 +30,7 @@ func GetConfig() *ConfigStruct {
 			Port:           getEnv("PORT", "8080"),
 			RedisURL:       getEnv("REDIS_URL", "localhost:6379"),
 			KafkaURL:       getEnv("KAFKA_URL", "localhost:9092"),
+			TempoURL:       getEnv("TEMPO_URL", "localhost:4318"),
 			SqlUrl:         getEnv("SQL_URL", "postgres://postgres:postgres@localhost:5432/testdb"),
 		}
 		config = c

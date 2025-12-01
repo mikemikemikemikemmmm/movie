@@ -2,6 +2,7 @@ package internal
 
 import (
 	"backend/internal/kafka"
+	"backend/internal/otel"
 	"backend/internal/redis"
 	"backend/internal/sql"
 	"backend/internal/structs"
@@ -11,30 +12,47 @@ import (
 )
 
 func handleReserve(c *gin.Context) {
+	c.Header(otel.NotEndSpan, "true")
+	ctx := c.Request.Context() // 從 middleware 傳下來的 context
+
+	// 解析 JSON
 	var reserveData structs.ReservePostData
+	_, span := otel.GlobalTracer.Start(ctx, "BindJSON")
 	if err := c.ShouldBindJSON(&reserveData); err != nil {
-		c.JSON(400, gin.H{
-			"error": "請求參數格式錯誤: " + err.Error(),
-		})
+		span.RecordError(err)
+		span.End()
+		c.JSON(400, gin.H{"error": "請求參數格式錯誤: " + err.Error()})
 		return
 	}
+	span.End()
+
+	// 驗證 SeatIds
 	if len(reserveData.SeatIds) == 0 {
 		c.JSON(400, gin.H{"error": "SeatIds 不能為空"})
 		return
 	}
+
+	// Redis 鎖座位
+	_, span = otel.GlobalTracer.Start(ctx, "RedisLockSeats")
 	if err := redis.HandleLockSeats(&reserveData); err != nil {
-		c.JSON(400, gin.H{
-			"error": err.Error(),
-		})
+		span.RecordError(err)
+		span.End()
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
+	span.End()
+
+	// Kafka 發送訂位消息
+	_, span = otel.GlobalTracer.Start(ctx, "KafkaSendReserveMessage")
 	if err := kafka.SendReserveMessage(c, &reserveData); err != nil {
+		span.RecordError(err)
+		span.End()
 		redis.ReleaseLockSeats(&reserveData)
-		c.JSON(400, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
+	span.End()
+
 	c.JSON(200, gin.H{"status": "success", "message": "訂位請求已排隊"})
 }
 func handleGetAllSeats(c *gin.Context) {

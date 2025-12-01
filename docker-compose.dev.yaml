@@ -1,40 +1,19 @@
 version: "3.8"
 services:
+  # data
   backend:
+    container_name: backend
     build: ./backend
     ports:
       - "8080:8080"
-  prometheus:
-    image: prom/prometheus:v3.7.3
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml
-    ports:
-      - "9090:9090"
-    depends_on:
-      - backend
-
-  grafana:
-    image: grafana/grafana:12.4.0-19350470871
-    ports:
-      - "3000:3000"
-    depends_on:
-      - prometheus
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-
-  # alertmanager:
-  #   image: prom/alertmanager:v0.29.0
-  #   volumes:
-  #     - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
-  #   ports:
-  #     - "9093:9093"
   
   redis:
+    container_name: redis
     image: redis:8.0.5-alpine
     ports:
       - "6379:6379"
   redisinsight:
+    container_name: redisinsight
     image: redis/redisinsight:2.70
     ports:
       - "5540:5540"
@@ -42,8 +21,8 @@ services:
       - RI_REDIS_PORT=6379
 
   kafka:
-    image: apache/kafka:4.0.1
     container_name: kafka
+    image: apache/kafka:4.0.1
     ports:
       - "9092:9092"
     environment:
@@ -63,6 +42,7 @@ services:
 
       
   postgres:
+    container_name: postgres
     image: postgres:15.15-alpine3.22
     environment:
       POSTGRES_USER: postgres
@@ -72,3 +52,28 @@ services:
       - "5432:5432"
     volumes:
       - ./sql-init:/docker-entrypoint-initdb.d
+  # infra
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:v3.7.3
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+  tempo:
+    image: grafana/tempo:main-7b00d6c
+    ports:
+      - "3200:3200"   # Tempo HTTP API
+      - "4318:4318"   # OTLP/HTTP 接收追蹤
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo.yaml
+      - ./tempo/data:/tmp/tempo/traces
+    command: -config.file=/etc/tempo.yaml
+  grafana:
+    image: grafana/grafana:12.1
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
+    depends_on:
+      - tempo

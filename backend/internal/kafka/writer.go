@@ -2,6 +2,7 @@ package kafka
 
 import (
 	config "backend/internal/config"
+	"backend/internal/otel"
 	"backend/internal/structs"
 	"context"
 	"encoding/json"
@@ -72,6 +73,7 @@ func createMessage(reserveData *structs.ReservePostData) (*kafka.Message, error)
 }
 func SendReserveMessage(c *gin.Context, reserveData *structs.ReservePostData) error {
 	kafkaMessage, err := createMessage(reserveData)
+	otel.InjectTraceToKafkaHeader(c.Request.Context(), kafkaMessage)
 	if err != nil {
 		log.Printf("創造kafkaMessage錯誤: %v", err)
 		return fmt.Errorf("訊息發送失敗，請稍後重試")
